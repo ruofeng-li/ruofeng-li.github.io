@@ -79,6 +79,13 @@
         .subheader .hello {
             color: red;
         }
+        .footmark {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 10px;
+            color: gray;
+        }
     </style>
 </head>
 <body>
@@ -86,7 +93,7 @@
 <h3 style="text-align:center;">唐人街捉妖-镜花推理社专属无聊小game</h3>
 <h2 style="text-align:center;">中餐馆杀妖案🗡️👿</h2>
 <h3 class="subheader">绿色小妖死了！妖工智障造反了！</h3> <!-- Subheader -->
-<div class="subheader">点击黑色圆点放置三个右转标记（↪️）使妖工智障（红色圆点）经过小妖尸体（💀）抵达餐桌</div> <!-- Plain text subheader -->
+<div class="subheader">点击黑色圆点放置或移除三个右转标记（↪️）使妖工智障（红色圆点）经过小妖尸体（💀）抵达餐桌</div> <!-- Plain text subheader -->
 <div class="subheader">小妖尸体（💀），冷库（🥩）：切肉并转身 (经过💀后红色圆点将变绿)</div> <!-- Plain text subheader -->
 <div class="subheader" id="subheader">洗手间：左转</div> <!-- Plain text subheader -->
 
@@ -135,6 +142,8 @@
 <button id="startBtn" onclick="startMovement()">走完全程</button>
 <button id="resetBtn" onclick="resetRobot()">重新开始</button>
 <button id="roundTwoBtn" onclick="roundTwo()">文字法术！</button> <!-- Round Two button -->
+
+<div class="footmark">Developed by 镜花推理社-ruofeng</div>
 
 <script>
     const rows = 4;
@@ -226,7 +235,14 @@
             col: currentCol, 
             isGreen: isGreenRobot, 
             rowDir: rowDirection, 
-            colDir: colDirection
+            colDir: colDirection,
+            buttonsState: {
+                moveBtnDisabled: document.getElementById('moveBtn').disabled,
+                startBtnDisabled: document.getElementById('startBtn').disabled,
+                revertBtnDisabled: document.getElementById('revertBtn').disabled,
+                roundOneBtnDisabled: document.getElementById('roundOneBtn').disabled,
+                roundTwoBtnDisabled: document.getElementById('roundTwoBtn').disabled,
+            }
         });
         prevRow = currentRow;
         prevCol = currentCol;
@@ -364,6 +380,14 @@
             // Revert the robot's direction
             rowDirection = lastMove.rowDir;
             colDirection = lastMove.colDir;
+
+            // Revert the button states
+            document.getElementById('moveBtn').disabled = lastMove.buttonsState.moveBtnDisabled;
+            document.getElementById('startBtn').disabled = lastMove.buttonsState.startBtnDisabled;
+            document.getElementById('revertBtn').disabled = lastMove.buttonsState.revertBtnDisabled;
+            document.getElementById('roundOneBtn').disabled = lastMove.buttonsState.roundOneBtnDisabled;
+            document.getElementById('roundTwoBtn').disabled = lastMove.buttonsState.roundTwoBtnDisabled;
+        } else {
         }
     }
 
