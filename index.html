@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>中餐馆杀妖案</title>
+    <title>唐人街捉妖x镜花推理社专属无聊小game</title>
     <style>
         .grid {
             display: grid;
@@ -80,8 +80,15 @@
 </head>
 <body>
 
-<h2 style="text-align:center;">中餐馆杀妖案</h2>
-<canvas id="canvas" width="260" height="260"></canvas>
+<h3 style="text-align:center;">唐人街捉妖-镜花推理社专属无聊小game</h3>
+<h2 style="text-align:center;">中餐馆杀妖案🗡️👿</h2>
+<h3 class="subheader">绿色小妖死了！妖工智障造反了！</h3> <!-- Subheader -->
+<div class="subheader">点击黑色圆点放置三个右转标记（↪️）使妖工智障（红色圆点）经过小妖尸体（💀）抵达餐桌</div> <!-- Plain text subheader -->
+<div class="subheader">小妖尸体（💀），冷库（🥩）：切肉并转身 (经过💀后红色圆点将变绿)</div> <!-- Plain text subheader -->
+<div class="subheader">男洗手间：右转</div> <!-- Plain text subheader -->
+<div class="subheader">女洗手间， 无性别洗手间：左转</div> <!-- Plain text subheader -->
+
+<!-- <canvas id="canvas" width="260" height="260"></canvas> -->
 
 <div class="grid" id="grid">
     <div class="dot-container">
@@ -121,6 +128,7 @@
 </div>
 
 <button id="moveBtn" onclick="moveRobot()">模拟一步</button>
+<button id="revertBtn" onclick="revertMove()">后退一步</button>
 <button id="startBtn" onclick="startMovement()">模拟全程</button>
 <button id="resetBtn" onclick="resetRobot()">重置</button>
 
@@ -145,21 +153,22 @@
     let interval;
     const turnRightPositions = [];  // Array to track which positions have turn right signs
     const maxTurnRightSigns = 3;   // Maximum number of turn right signs
-    const freePositions = [2,3,4,5,9,10,11,12,14]
+    const freePositions = [2,3,4,5,9,10,11,12,14];    // Specifity positions without signs
+    let moveStack = [];  // Stack to store previous positions for revert
 
     // Get the canvas context to draw lines
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
+    // const canvas = document.getElementById("canvas");
+    // const ctx = canvas.getContext("2d");
 
-    // Draw line on the canvas
-    function drawLine(prevX, prevY, currX, currY) {
-        ctx.beginPath();
-        ctx.moveTo(prevX, prevY);
-        ctx.lineTo(currX, currY);
-        ctx.strokeStyle = 'blue';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-    }
+    // // Draw line on the canvas
+    // function drawLine(prevX, prevY, currX, currY) {
+    //     ctx.beginPath();
+    //     ctx.moveTo(prevX, prevY);
+    //     ctx.lineTo(currX, currY);
+    //     ctx.strokeStyle = 'blue';
+    //     ctx.lineWidth = 2;
+    //     ctx.stroke();
+    // }
 
     // Function to get 1D index from row and column
     function getPosition(row, col) {
@@ -205,6 +214,14 @@
         grid[getPosition(currentRow, currentCol)].classList.remove('robot', 'green-robot');  // Remove red color from the previous dot
 
         // Remember previous position
+        const isGreenRobot = grid[getPosition(currentRow, currentCol)].classList.contains('green-robot');
+        moveStack.push({
+            row: currentRow, 
+            col: currentCol, 
+            isGreen: isGreenRobot, 
+            rowDir: rowDirection, 
+            colDir: colDirection
+        });
         prevRow = currentRow;
         prevCol = currentCol;
 
@@ -304,6 +321,30 @@
     function reverseDirection() {
         rowDirection = -rowDirection;
         colDirection = -colDirection;
+    }
+
+    // Function to revert the robot to the previous position
+    function revertMove() {
+        if (moveStack.length > 0) {
+            const lastMove = moveStack.pop();
+            // Remove the robot from the current position
+            grid[getPosition(currentRow, currentCol)].classList.remove('robot', 'green-robot');
+            
+            // Update the current position to the previous one
+            currentRow = lastMove.row;
+            currentCol = lastMove.col;
+            
+            // Reapply the robot's previous state (red or green)
+            if (lastMove.isGreen) {
+                grid[getPosition(currentRow, currentCol)].classList.add('green-robot');
+            } else {
+                grid[getPosition(currentRow, currentCol)].classList.add('robot');
+            }
+
+            // Revert the robot's direction
+            rowDirection = lastMove.rowDir;
+            colDirection = lastMove.colDir;
+        }
     }
 
     // Function to start automatic movement
