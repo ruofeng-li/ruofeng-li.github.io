@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中餐馆杀妖案</title>
+    <style>
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 50px);
+            grid-template-rows: repeat(4, 50px);
+            gap: 20px;
+            justify-content: center;
+            margin-top: 50px;
+        }
+        .dot-container {
+            position: relative;
+            text-align: center;
+            width: 50px;
+            height: 50px;
+        }
+        .dot {
+            width: 20px;
+            height: 20px;
+            background-color: black;
+            border-radius: 50%;
+            margin: auto;
+            position: absolute;
+            top: 15px;
+            left: 15px;
+        }
+        .robot {
+            background-color: red !important; /* Change dot color to red when the robot is on it */
+        }
+        .green-robot {
+            background-color: green !important; /* Change dot color to green when the robot hits the skull */
+        }
+        .turn-right::before {
+            content: "↪️"; /* Turn Right sign */
+            font-size: 24px;
+            position: absolute;
+            top: -10px;
+            left: 15px; /* Move the turn right sign slightly to the right */
+        }
+        .skull::before {
+            content: "💀"; /* Skull emoji */
+            font-size: 24px;
+            position: absolute;
+            top: -10px;
+            left: 15px;
+        }
+        .meat::before {
+            content: "🥩"; /* Skull emoji */
+            font-size: 24px;
+            position: absolute;
+            top: -10px;
+            left: 15px;
+        }
+        .label {
+            position: absolute;
+            top: 30px; /* Adjust the distance from the dot */
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: black;
+        }
+        button {
+            display: block;
+            margin: 10px auto;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        canvas {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+    </style>
+</head>
+<body>
+
+<h2 style="text-align:center;">中餐馆杀妖案</h2>
+<canvas id="canvas" width="260" height="260"></canvas>
+
+<div class="grid" id="grid">
+    <div class="dot-container">
+        <div class="dot" id="no-sex" data-position="0"></div>
+        <span class="label">无性别洗手间</span>
+    </div>
+    <div class="dot-container">
+        <div class="dot" id="female" data-position="1"></div>
+        <span class="label">女洗手间</span>
+    </div>
+    <div class="dot-container"><div class="dot" data-position="2"></div></div>
+    <div class="dot-container"><div class="dot" data-position="3"></div></div>
+    
+    <div class="dot-container"><div class="dot" data-position="4"></div></div>
+    <div class="dot-container"><div class="dot" data-position="5"></div></div>
+    <div class="dot-container"><div class="dot skull" data-position="6"></div></div>
+    <div class="dot-container">
+        <div class="dot" id="dining-hall" data-position="7"></div>
+        <span class="label">餐桌</span>
+    </div>
+    
+    <div class="dot-container">
+        <div class="dot robot" id="start" data-position="8"></div>
+        <span class="label">后厨</span>
+    </div>
+    <div class="dot-container"><div class="dot" data-position="9"></div></div>
+    <div class="dot-container"><div class="dot" data-position="10"></div></div>
+    <div class="dot-container"><div class="dot" data-position="11"></div></div>
+    
+    <div class="dot-container"><div class="dot" data-position="12"></div></div>
+    <div class="dot-container">
+        <div class="dot" id="male" data-position="13"></div>
+        <span class="label">男洗手间</span>
+    </div>
+    <div class="dot-container"><div class="dot" data-position="14"></div></div>
+    <div class="dot-container"><div class="dot meat" data-position="15"></div></div>
+</div>
+
+<button id="moveBtn" onclick="moveRobot()">模拟一步</button>
+<button id="startBtn" onclick="startMovement()">模拟全程</button>
+<button id="resetBtn" onclick="resetRobot()">重置</button>
+
+<script>
+    const rows = 4;
+    const cols = 4;
+    let currentRow = 2;  // Start at row 2 (third row)
+    let currentCol = 0;  // Start at column 0 (first column)
+    let rowDirection = 0;  // 1 for down, -1 for up
+    let colDirection = 1;  // 1 for right, -1 for left
+    let encounterSkull = 0;  //0 for not having encountered skull
+    const grid = document.querySelectorAll('.grid .dot');
+    const diningHallRow = 1;  // Dining Hall is at row 1 (second row)
+    const diningHallCol = 3;  // Dining Hall is at column 3 (fourth column)
+    const skullPosition = 6;  // Skull is at position 6
+    const meatPosition = 15;  // Meat is at position 15
+    const malePosition = 13;  // Male is at position 6
+    const femalePosition = 1;  // Female is at position 6
+    const noSexPosition = 0;  // NoSex is at position 6
+    const startRow = 2;  // New starting row
+    const startCol = 0;  // New starting column
+    let interval;
+    const turnRightPositions = [];  // Array to track which positions have turn right signs
+    const maxTurnRightSigns = 3;   // Maximum number of turn right signs
+
+    // Get the canvas context to draw lines
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    // Draw line on the canvas
+    function drawLine(prevX, prevY, currX, currY) {
+        ctx.beginPath();
+        ctx.moveTo(prevX, prevY);
+        ctx.lineTo(currX, currY);
+        ctx.strokeStyle = 'blue';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+
+    // Function to get 1D index from row and column
+    function getPosition(row, col) {
+        return row * cols + col;
+    }
+
+    // Function to add or remove "Turn Right" sign
+    function toggleTurnRightSign(position) {
+        const dot = grid[position];
+        const index = turnRightPositions.indexOf(position);
+        if (turnRightPositions.length >= maxTurnRightSigns && !dot.classList.contains('turn-right')) {
+            // Prevent adding more than 3 "Turn Right" signs
+            alert('最多放three个右转标记哟～');
+            return;
+        }
+        if (dot.classList.contains('turn-right')) {
+            // Remove "Turn Right" sign
+            dot.classList.remove('turn-right');
+            if (index !== -1) {
+                turnRightPositions.splice(index, 1);  // Remove the position from the array
+            }
+        } else {
+            // Add "Turn Right" sign
+            dot.classList.add('turn-right');
+            if (index === -1) {
+                turnRightPositions.push(position);  // Add the position to the array
+            }
+        }
+    }
+
+    // Event listener for clicking on dots to toggle "Turn Right" sign
+    grid.forEach(dot => {
+        dot.addEventListener('click', function () {
+            const position = parseInt(this.getAttribute('data-position'));
+            toggleTurnRightSign(position);  // Toggle "Turn Right" sign on click
+        });
+    });
+
+    // Function to move the robot
+    function moveRobot() {
+        grid[getPosition(currentRow, currentCol)].classList.remove('robot', 'green-robot');  // Remove red color from the previous dot
+
+        // Remember previous position
+        prevRow = currentRow;
+        prevCol = currentCol;
+
+        const currentPos = getPosition(currentRow, currentCol);
+        if (turnRightPositions.includes(currentPos)) {
+            turnRight();
+        }
+
+        if (currentPos === skullPosition) {
+            // If robot hits the skull, reverse direction
+            encounterSkull = 1
+            reverseDirection();
+        }
+
+        if (currentPos === meatPosition) {
+            // If robot hits the meat, reverse direction
+            reverseDirection();
+        }
+
+        if (currentPos === malePosition) {
+            // If robot hits the meat, reverse direction
+            turnRight();
+        }
+
+        if (currentPos === femalePosition || currentPos === noSexPosition) {
+            // If robot hits the meat, reverse direction
+            turnLeft();
+        }
+
+        currentCol += colDirection;
+        currentRow += rowDirection;
+        if (currentCol === cols || currentCol === -1) {
+            colDirection = -colDirection;
+            currentCol += colDirection;
+        }
+        if (currentRow === rows || currentRow === -1) {
+            rowDirection = -rowDirection;
+            currentRow += rowDirection;
+        }
+
+         // Draw line between previous and current positions
+        //  drawLine(prevCol * 70 + 25, prevRow * 70 + 25, currentCol * 70 + 25, currentRow * 70 + 25);
+
+        if (encounterSkull === 0) {
+            grid[getPosition(currentRow, currentCol)].classList.add('robot');  // Turn the current dot red
+        } else {
+            grid[getPosition(currentRow, currentCol)].classList.add('green-robot'); // Turn the current dot green
+        }
+        
+        if ((currentRow === diningHallRow && currentCol === diningHallCol) || (currentRow === startRow && currentCol === startCol)) {
+            clearInterval(interval);
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('moveBtn').disabled = true;
+            // Pop-up message based on whether the robot encountered the skull
+            if ((currentRow === diningHallRow && currentCol === diningHallCol) && (encounterSkull === 1)) {
+                alert("原来this is真相！");
+            } else {
+                alert("no对no对！再think think!");
+            }
+        }
+    }
+
+    // Function to handle the robot turning right
+    function turnRight() {
+        if (colDirection === 1 && rowDirection === 0) {
+            rowDirection = 1;
+            colDirection = 0;
+        } else if (rowDirection === 1 && colDirection === 0) {
+            colDirection = -1;
+            rowDirection = 0;
+        } else if (colDirection === -1 && rowDirection === 0) {
+            rowDirection = -1;
+            colDirection = 0;
+        } else if (rowDirection === -1 && colDirection === 0) {
+            colDirection = 1;
+            rowDirection = 0;
+        }
+    }
+
+    function turnLeft() {
+        if (colDirection === 1 && rowDirection === 0) {
+            rowDirection = -1;
+            colDirection = 0;
+        } else if (rowDirection === 1 && colDirection === 0) {
+            colDirection = 1;
+            rowDirection = 0;
+        } else if (colDirection === -1 && rowDirection === 0) {
+            rowDirection = 1;
+            colDirection = 0;
+        } else if (rowDirection === -1 && colDirection === 0) {
+            colDirection = -1;
+            rowDirection = 0;
+        }
+    }
+
+    // Function to reverse the robot's direction (when it hits the skull)
+    function reverseDirection() {
+        rowDirection = -rowDirection;
+        colDirection = -colDirection;
+    }
+
+    // Function to start automatic movement
+    function startMovement() {
+        document.getElementById('startBtn').disabled = true;
+        interval = setInterval(moveRobot, 500);
+    }
+
+    // Function to reset the robot
+    function resetRobot() {
+        clearInterval(interval);
+        grid[getPosition(currentRow, currentCol)].classList.remove('robot', 'green-robot');
+        currentRow = startRow;
+        currentCol = startCol;
+        rowDirection = 0;
+        colDirection = 1;
+        encounterSkull = 0;
+        grid[getPosition(currentRow, currentCol)].classList.add('robot');
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('moveBtn').disabled = false;
+    }
+</script>
+
+</body>
+</html>
