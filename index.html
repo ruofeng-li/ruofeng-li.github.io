@@ -70,11 +70,14 @@
             padding: 10px 20px;
             font-size: 16px;
         }
-        canvas {
-            position: absolute;
-            top: 50px;
-            left: 50%;
-            transform: translateX(-50%);
+        .subheader {
+            font-size: 18px;
+            text-align: center;
+            margin-top: 10px;
+            color: #555;
+        }
+        .subheader .hello {
+            color: red;
         }
     </style>
 </head>
@@ -85,8 +88,7 @@
 <h3 class="subheader">绿色小妖死了！妖工智障造反了！</h3> <!-- Subheader -->
 <div class="subheader">点击黑色圆点放置三个右转标记（↪️）使妖工智障（红色圆点）经过小妖尸体（💀）抵达餐桌</div> <!-- Plain text subheader -->
 <div class="subheader">小妖尸体（💀），冷库（🥩）：切肉并转身 (经过💀后红色圆点将变绿)</div> <!-- Plain text subheader -->
-<div class="subheader">男洗手间：右转</div> <!-- Plain text subheader -->
-<div class="subheader">女洗手间， 无性别洗手间：左转</div> <!-- Plain text subheader -->
+<div class="subheader" id="subheader">洗手间：左转</div> <!-- Plain text subheader -->
 
 <!-- <canvas id="canvas" width="260" height="260"></canvas> -->
 
@@ -127,10 +129,12 @@
     <div class="dot-container"><div class="dot meat" data-position="15"></div></div>
 </div>
 
-<button id="moveBtn" onclick="moveRobot()">模拟一步</button>
+<button id="roundOneBtn" onclick="roundOne()">预期路径</button>
+<button id="moveBtn" onclick="moveRobot()">前进一步</button>
 <button id="revertBtn" onclick="revertMove()">后退一步</button>
-<button id="startBtn" onclick="startMovement()">模拟全程</button>
-<button id="resetBtn" onclick="resetRobot()">重置</button>
+<button id="startBtn" onclick="startMovement()">走完全程</button>
+<button id="resetBtn" onclick="resetRobot()">重新开始</button>
+<button id="roundTwoBtn" onclick="roundTwo()">文字法术！</button> <!-- Round Two button -->
 
 <script>
     const rows = 4;
@@ -139,7 +143,7 @@
     let currentCol = 0;  // Start at column 0 (first column)
     let rowDirection = 0;  // 1 for down, -1 for up
     let colDirection = 1;  // 1 for right, -1 for left
-    let encounterSkull = 0;  //0 for not having encountered skull
+    let encounterSkull = 0;  // 0 for not having encountered skull
     const grid = document.querySelectorAll('.grid .dot');
     const diningHallRow = 1;  // Dining Hall is at row 1 (second row)
     const diningHallCol = 3;  // Dining Hall is at column 3 (fourth column)
@@ -147,7 +151,7 @@
     const meatPosition = 15;  // Meat is at position 15
     const malePosition = 13;  // Male is at position 6
     const femalePosition = 1;  // Female is at position 6
-    const noSexPosition = 0;  // NoSex is at position 6
+    const noSexPosition = 0;  // NoSex is at position 0
     const startRow = 2;  // New starting row
     const startCol = 0;  // New starting column
     let interval;
@@ -155,6 +159,8 @@
     const maxTurnRightSigns = 3;   // Maximum number of turn right signs
     const freePositions = [2,3,4,5,9,10,11,12,14];    // Specifity positions without signs
     let moveStack = [];  // Stack to store previous positions for revert
+    let simulateRoundOne = 0;
+    let simulateRoundTwo = 0;
 
     // Get the canvas context to draw lines
     // const canvas = document.getElementById("canvas");
@@ -241,12 +247,17 @@
             reverseDirection();
         }
 
-        if (currentPos === malePosition) {
-            // If robot hits the meat, reverse direction
-            turnRight();
+        if (currentPos === malePosition && simulateRoundTwo === 0) {
+            // If robot hits male toilet, turn left
+            turnLeft();
         }
 
-        if (currentPos === femalePosition || currentPos === noSexPosition) {
+        if (currentPos === femalePosition) {
+            // If robot hits the meat, reverse direction
+            turnLeft();
+        }
+
+        if (currentPos === noSexPosition && simulateRoundTwo === 0) {
             // If robot hits the meat, reverse direction
             turnLeft();
         }
@@ -277,9 +288,18 @@
             document.getElementById('moveBtn').disabled = true;
             // Pop-up message based on whether the robot encountered the skull
             if ((currentRow === diningHallRow && currentCol === diningHallCol) && (encounterSkull === 1)) {
-                alert("原来this is真相！");
+                if (simulateRoundOne === 0 && simulateRoundTwo === 0) {
+                    alert("原来this is真相！");
+                }
+                simulateRoundTwo = 0;
+                simulateRoundOne = 0;
             } else {
-                alert("no对no对！再think think!");
+                if (simulateRoundOne === 0 && simulateRoundTwo === 0) {
+                    alert("no对no对！再think think!");
+                }
+                simulateRoundTwo = 0;
+                simulateRoundOne = 0;
+
             }
         }
     }
@@ -365,6 +385,55 @@
         grid[getPosition(currentRow, currentCol)].classList.add('robot');
         document.getElementById('startBtn').disabled = false;
         document.getElementById('moveBtn').disabled = false;
+        document.getElementById('roundOneBtn').disabled = false;
+        document.getElementById('roundTwoBtn').disabled = false;
+    }
+
+    function roundOne() {
+        simulateRoundOne = 1
+
+        // Remove all existing "Turn Right" signs
+        turnRightPositions.forEach(pos => {
+            const dot = grid[pos];
+            dot.classList.remove('turn-right');
+        });
+        turnRightPositions.length = 0; // Clear the array
+
+        // Add new "Turn Right" signs at positions 2, 3, and 9
+        toggleTurnRightSign(2);
+        toggleTurnRightSign(3);
+        toggleTurnRightSign(9);
+
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('roundOneBtn').disabled = true;
+        document.getElementById('roundTwoBtn').disabled = true;
+        interval = setInterval(moveRobot, 500);
+    }
+
+    // Function to handle "Round Two" logic
+    function roundTwo() {
+        simulateRoundTwo = 1
+
+        // Remove all existing "Turn Right" signs
+        turnRightPositions.forEach(pos => {
+            const dot = grid[pos];
+            dot.classList.remove('turn-right');
+        });
+        turnRightPositions.length = 0; // Clear the array
+
+        // Add new "Turn Right" signs at positions 2, 3, and 9
+        toggleTurnRightSign(2);
+        toggleTurnRightSign(3);
+        toggleTurnRightSign(9);
+
+        // Change the subheader text to "Hello World" with "Hello" in red
+        const subheader = document.getElementById("subheader");
+        subheader.innerHTML = '<span class="hello">女</span> 洗手间：左转';
+
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('roundOneBtn').disabled = true;
+        document.getElementById('roundTwoBtn').disabled = true;
+        interval = setInterval(moveRobot, 500);
     }
 </script>
 
