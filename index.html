@@ -145,6 +145,7 @@
     let interval;
     const turnRightPositions = [];  // Array to track which positions have turn right signs
     const maxTurnRightSigns = 3;   // Maximum number of turn right signs
+    const freePositions = [2,3,4,5,9,10,11,12,14]
 
     // Get the canvas context to draw lines
     const canvas = document.getElementById("canvas");
@@ -182,9 +183,11 @@
             }
         } else {
             // Add "Turn Right" sign
-            dot.classList.add('turn-right');
-            if (index === -1) {
-                turnRightPositions.push(position);  // Add the position to the array
+            if (freePositions.includes(position)) {
+                dot.classList.add('turn-right');
+                if (index === -1) {
+                    turnRightPositions.push(position);  // Add the position to the array
+                }
             }
         }
     }
