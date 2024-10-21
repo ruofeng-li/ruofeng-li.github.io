@@ -148,7 +148,7 @@
 <button id="revertBtn" onclick="revertMove()">后退一步</button>
 <button id="startBtn" onclick="startMovement()">走完全程</button>
 <button id="resetBtn" onclick="resetRobot()">重新开始</button>
-<button id="roundTwoBtn" onclick="roundTwo()">文字法术！</button>
+<!-- <button id="roundTwoBtn" onclick="roundTwo()">文字法术！</button> -->
 
 <div class="footmark">Developed by 镜花推理社-若枫</div>
 
@@ -248,7 +248,7 @@
                 startBtnDisabled: document.getElementById('startBtn').disabled,
                 revertBtnDisabled: document.getElementById('revertBtn').disabled,
                 roundOneBtnDisabled: document.getElementById('roundOneBtn').disabled,
-                roundTwoBtnDisabled: document.getElementById('roundTwoBtn').disabled,
+                // roundTwoBtnDisabled: document.getElementById('roundTwoBtn').disabled,
             }
         });
         prevRow = currentRow;
@@ -391,7 +391,7 @@
             document.getElementById('startBtn').disabled = lastMove.buttonsState.startBtnDisabled;
             document.getElementById('revertBtn').disabled = lastMove.buttonsState.revertBtnDisabled;
             document.getElementById('roundOneBtn').disabled = lastMove.buttonsState.roundOneBtnDisabled;
-            document.getElementById('roundTwoBtn').disabled = lastMove.buttonsState.roundTwoBtnDisabled;
+            // document.getElementById('roundTwoBtn').disabled = lastMove.buttonsState.roundTwoBtnDisabled;
         } else {
         }
     }
@@ -415,7 +415,7 @@
         document.getElementById('startBtn').disabled = false;
         document.getElementById('moveBtn').disabled = false;
         document.getElementById('roundOneBtn').disabled = false;
-        document.getElementById('roundTwoBtn').disabled = false;
+        // document.getElementById('roundTwoBtn').disabled = false;
     }
 
     function roundOne() {
@@ -435,7 +435,7 @@
 
         document.getElementById('startBtn').disabled = true;
         document.getElementById('roundOneBtn').disabled = true;
-        document.getElementById('roundTwoBtn').disabled = true;
+        // document.getElementById('roundTwoBtn').disabled = true;
         interval = setInterval(moveRobot, 500);
     }
 
@@ -461,7 +461,7 @@
 
         document.getElementById('startBtn').disabled = true;
         document.getElementById('roundOneBtn').disabled = true;
-        document.getElementById('roundTwoBtn').disabled = true;
+        // document.getElementById('roundTwoBtn').disabled = true;
         interval = setInterval(moveRobot, 500);
     }
 </script>
